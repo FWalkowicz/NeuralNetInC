@@ -89,6 +89,30 @@ void multipleMatrixByValue(Matrix result, float value) {
     }
 }
 
+void readData(Matrix DatasetMatix) {
+    char line[1000];
+    char *token;
+    FILE *file = fopen("./Data/gold.csv", "r");
+    if (file == NULL) {
+        perror("Error opening file");
+    }
+
+    fgets(line, sizeof(line), file); // skip header
+
+    for (int i = 0; i < DatasetMatix.rows; i++) {
+        fgets(line, sizeof(line), file);
+        token = strtok(line, ",");
+        for (int j = 0; j < DatasetMatix.cols; j++) {
+            DatasetMatix.data[i * DatasetMatix.cols + j] = atof(token); // przypisanie wartości z CSV do macierzy i zamiana str na float
+            token = strtok(NULL, ",");
+            if (token == NULL) {
+                break;
+            }
+        }
+    }
+    fclose(file);
+}
+
 int main(void) {
     Matrix mat = createMatrix(3, 3);
     initMatrix(mat);
