@@ -89,6 +89,16 @@ void multipleMatrixByValue(Matrix result, float value) {
     }
 }
 
+Matrix copyMatrix(Matrix from) {
+    Matrix to = createMatrix(from.rows, from.cols);
+    for (int i = 0; i < from.rows; i++) {
+        for (int j = 0; j < from.cols; j++) {
+            to.data[i * from.cols + j] = from.data[i * from.cols + j];
+        }
+    }
+    return to;
+}
+
 void readData(Matrix DatasetMatrix) {
     char line[1000];
     char *token;
@@ -275,6 +285,8 @@ float R_squared(Matrix actual, Matrix predicted) {
     }
     return 1- (rss / tss);
 }
+
+
 
 int main(void) {
     Matrix mat = createMatrix(3, 3);
