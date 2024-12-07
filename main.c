@@ -337,10 +337,42 @@ int main(void) {
     free(DatasetCSV.data);
 
     GoldModel model = createGoldModel();
+
     Predictions predictions;
     predictions.TrainPredictions = createMatrix(Dataset.trainDatasetX.rows, 1);
     predictions.ValidPredictions = createMatrix(Dataset.validDatasetX.rows, 1);
     predictions.TestPredictions = createMatrix(Dataset.testDatasetX.rows, 1);
+
+    printf("Valid rows: %d", predictions.ValidPredictions.rows);
+
+    const int epochs = 1000;
+    for (int epoch = 0; epoch < epochs; epoch++) {
+        // Training phase
+        for (int i = 0; i < Dataset.trainDatasetX.rows; i++) {
+            memset(model.a0.data, 0, sizeof(float) * model.a0.cols);
+            for (int j = 0; j < Dataset.trainDatasetX.cols; j++) {
+                model.a0.data[j] = Dataset.trainDatasetX.data[i * Dataset.trainDatasetX.cols + j];
+            }
+            predictions.TrainPredictions.data[i] = forward(model);
+        }
+
+        // Validation phase
+        for (int i = 0; i < Dataset.validDatasetX.rows; i++) {
+            memset(model.a0.data, 0, sizeof(float) * model.a0.cols);
+            for (int j = 0; j < Dataset.validDatasetX.cols; j++) {
+                model.a0.data[j] = Dataset.validDatasetX.data[i * Dataset.validDatasetX.cols + j];
+            }
+            predictions.ValidPredictions.data[i] = forward(model);
+        }
+        float TrainMse = MSE(Dataset.trainDatasetY, predictions.TrainPredictions);
+        float RSquaredTrain = R_squared(Dataset.trainDatasetY, predictions.TrainPredictions);
+        printf("Epoch %d/%d %d/%d [===========================] - ms/step - MSE loss: %.03f, R^2: %f  val_loss : %.02f\n",
+            epoch + 1, epochs, Dataset.trainDatasetX.rows,
+            predictions.TrainPredictions.rows, TrainMse,
+            RSquaredTrain);
+
+    }
+
 
 
     return 0;
