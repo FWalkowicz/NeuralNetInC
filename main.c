@@ -286,6 +286,28 @@ float R_squared(Matrix actual, Matrix predicted) {
     return 1- (rss / tss);
 }
 
+void ReLU(Matrix mat) {
+    for (int i = 0; i < mat.rows; i++) {
+        for (int j = 0; j < mat.cols; j++) {
+            if (mat.data[i * mat.cols + j] < 0) {
+                mat.data[i * mat.cols + j] = 0;
+            }
+        }
+    }
+}
+
+void derivativeReLU(Matrix mat) {
+    for (int i = 0; i < mat.rows; i++) {
+        for (int j = 0; j < mat.cols; j++) {
+            if (mat.data[i * mat.cols + j] < 0) {
+                mat.data[i * mat.cols + j] = 0;
+            }
+            else {
+                mat.data[i * mat.cols + j] = 1;
+            }
+        }
+    }
+}
 
 
 int main(void) {
