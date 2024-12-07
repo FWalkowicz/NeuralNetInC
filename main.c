@@ -27,7 +27,7 @@ float randFloat() {
 void initMatrix(Matrix mat) {
     for (int i = 0; i < mat.rows; i++) {
         for (int j = 0; j < mat.cols; j++) {
-            mat.data[i * mat.cols + j] = randFloat() * 0.001;
+            mat.data[i * mat.cols + j] = randFloat() * 0.0001;
         }
     }
 }
@@ -323,6 +323,102 @@ float forward(GoldModel model) {
     return *model.a3.data;
 }
 
+void backward(GoldModel model, Matrix predictions, DatasetSplit dataset_split, float learningRate) {
+    // gradient dMSE/da3
+    // gradient MSE względem A3(wyjścia sieci)
+    float dMSEda3 = 0;
+    for (int i = 0; i < predictions.rows; i++) {
+        for (int j = 0; j < predictions.cols; j++) {
+            dMSEda3 += (-2.0 / (float) dataset_split.trainDatasetY.rows) * (
+                dataset_split.trainDatasetY.data[i] - predictions.data[i]);
+        }
+    }
+
+    // dMSE/db3 = dMSE/da3 * da3/db3 = dMSE/da3 * 1
+    float dMSEdb3 = dMSEda3;
+
+    // dMSE/dw3 = dMSE/da3 * da3/da2 * da2/dw3= dMSEda3 * a2.T
+    Matrix dMSEdw3 = createMatrix(model.w3.rows, model.w3.cols);
+    Matrix transposedA2 = transposeMatrix(model.a2);
+    for (int i = 0; i < dMSEdw3.rows; i++) {
+        for (int j = 0; j < dMSEdw3.cols; j++) {
+            dMSEdw3.data[i * dMSEdw3.cols + j] = transposedA2.data[i * dMSEdw3.cols + j];
+        }
+    }
+    printf("dMSEdw3: %d x %d, transposedA2: %d x %d\n",
+    dMSEdw3.rows, dMSEdw3.cols, transposedA2.rows, transposedA2.cols);
+    // dMSE/da2 = dMSE/a3 * w3.T
+    // Gradient propagowany do A2 - > dMSE/da2
+    Matrix dMSEda2 = copyMatrix(model.w3);
+    Matrix dMSEda2T = transposeMatrix(dMSEda2);
+    multipleMatrixByValue(dMSEda2T, dMSEda3);
+
+    // Gradient po ReLU dla a2
+    Matrix da2 = copyMatrix(model.a2);
+    derivativeReLU(da2);
+    Matrix dReLUda2 = createMatrix(model.a2.rows, model.a2.cols);
+    dotProduct(dMSEda2T, da2, dReLUda2);
+
+
+    // Gradient względem W2
+    Matrix dMSEdw2 = createMatrix(model.a1.cols, dReLUda2.cols);
+    Matrix a1Copy = copyMatrix(model.a1);
+    Matrix TransposedA1 = transposeMatrix(a1Copy);
+    dotProduct(TransposedA1, dReLUda2, dMSEdw2);
+
+    // dMSE/db2
+    Matrix dMSEdb2 = copyMatrix(dReLUda2);
+
+    // dMSE/da2 = dMSE/a3 * w3.T
+    // Gradient propagowany do A1 - > dMSE/da1
+    // dReLu/da2 @ w2.T
+    Matrix w2Copy = copyMatrix(model.w2);
+    Matrix TransposedW2 = transposeMatrix(w2Copy);
+    Matrix dReLuda1 = createMatrix(dReLUda2.rows, TransposedW2.cols);
+    dotProduct(dReLUda2, TransposedW2, dReLuda1);
+
+    // Gradient po ReLU dla a1
+    Matrix da1 = copyMatrix(model.a1);
+    derivativeReLU(da1);
+    Matrix dMSEda1 = createMatrix(dReLuda1.rows, da1.cols);
+    dotProduct(dReLuda1, da1, dMSEda1);
+
+    // dMSE/dw1
+    Matrix a0Copy = copyMatrix(model.a0);
+    Matrix TransposedA0 = transposeMatrix(a0Copy);
+    Matrix dMSEdw1 = createMatrix(TransposedA0.rows, dMSEda1.cols);
+    dotProduct(TransposedA0, dMSEda1, dMSEdw1);
+
+    // dMSE/db1
+    Matrix dMSEdb1 = copyMatrix(dMSEda1);
+
+    // printf("======= b3 gradient ======\n");
+    float step_size_b3 = learningRate * dMSEdb3;
+    model.b3.data[0] = model.b3.data[0] - step_size_b3;
+
+    // printf("======= w3 gradient ======\n");
+    // displayMatrix(dMSEdw3);
+    multipleMatrixByValue(dMSEdw3, learningRate);
+    subtractMatrix(model.w3, dMSEdw3);
+
+    // printf("======= b2 gradient ======\n");
+    multipleMatrixByValue(dMSEdb2, learningRate);
+    subtractMatrix(model.b2, dMSEdb2);
+
+    // printf("======= w2 gradiet ======\n");
+    multipleMatrixByValue(dMSEdw2, learningRate);
+    subtractMatrix(model.w2, dMSEdw2);
+
+    // printf("======= b1 gradiet ======\n");
+    multipleMatrixByValue(dMSEdb1, learningRate);
+    subtractMatrix(model.b1, dMSEdb1);
+
+    // printf("======= w1 gradiet ======\n");
+    multipleMatrixByValue(dMSEdw1, learningRate);
+    subtractMatrix(model.w1, dMSEdw1);
+
+}
+
 typedef struct {
     Matrix TrainPredictions;
     Matrix ValidPredictions;
@@ -345,7 +441,7 @@ int main(void) {
 
     printf("Valid rows: %d", predictions.ValidPredictions.rows);
 
-    const int epochs = 1000;
+    const int epochs = 10;
     for (int epoch = 0; epoch < epochs; epoch++) {
         // Training phase
         for (int i = 0; i < Dataset.trainDatasetX.rows; i++) {
@@ -355,7 +451,7 @@ int main(void) {
             }
             predictions.TrainPredictions.data[i] = forward(model);
         }
-
+        backward(model, predictions.TrainPredictions, Dataset, 0.00000001);
         // Validation phase
         for (int i = 0; i < Dataset.validDatasetX.rows; i++) {
             memset(model.a0.data, 0, sizeof(float) * model.a0.cols);
@@ -365,15 +461,16 @@ int main(void) {
             predictions.ValidPredictions.data[i] = forward(model);
         }
         float TrainMse = MSE(Dataset.trainDatasetY, predictions.TrainPredictions);
+        float ValidMse = MSE(Dataset.validDatasetY, predictions.ValidPredictions);
         float RSquaredTrain = R_squared(Dataset.trainDatasetY, predictions.TrainPredictions);
+        float RSquaredValid = R_squared(Dataset.validDatasetY, predictions.ValidPredictions);
         printf("Epoch %d/%d %d/%d [===========================] - ms/step - MSE loss: %.03f, R^2: %f  val_loss : %.02f\n",
             epoch + 1, epochs, Dataset.trainDatasetX.rows,
             predictions.TrainPredictions.rows, TrainMse,
             RSquaredTrain);
 
+
     }
-
-
 
     return 0;
 }
