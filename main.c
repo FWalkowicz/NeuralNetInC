@@ -113,6 +113,95 @@ void readData(Matrix DatasetMatix) {
     fclose(file);
 }
 
+float findMax(Matrix mat, int column) {
+    float max = 0;
+    for (int i = 0; i < mat.rows; i++) {
+        if (mat.data[i * mat.cols + column] > max) {
+            max = mat.data[i * mat.cols + column];
+        }
+    }
+
+    return max;
+}
+
+float findMin(Matrix mat, int column) {
+    float min = mat.data[mat.cols + column];
+    for (int i = 0; i < mat.rows; i++) {
+        if (mat.data[i * mat.cols + column] < min) {
+            min = mat.data[i * mat.cols + column];
+        }
+    }
+
+    return min;
+}
+
+void MinMaxNormalize(Matrix mat) {
+    for (int i = 1; i < mat.cols; i++) {
+        float min = findMin(mat, i);
+        float max = findMax(mat, i);
+        for (int j = 0; j < mat.rows; j++) {
+            mat.data[j * mat.cols + i] = (mat.data[j * mat.cols + i] - min) / (max - min);
+        }
+    }
+}
+
+typedef struct {
+    Matrix trainDatasetX;
+    Matrix trainDatasetY;
+    Matrix testDatasetX;
+    Matrix testDatasetY;
+    Matrix validDatasetX;
+    Matrix validDatasetY;
+} DatasetSplit;
+
+DatasetSplit CutDataset(Matrix mat, float trainPercent) {
+    int trainDatasetSize = (int)(mat.rows * trainPercent);
+    int testDatasetSize = (mat.rows - trainDatasetSize) / 2 + (mat.rows % 2);;
+    int validDatasetSize = mat.rows - trainDatasetSize - testDatasetSize;;
+
+    printf("train-%d | test-%d | valid-%d \n", trainDatasetSize, testDatasetSize, validDatasetSize);
+
+    DatasetSplit result;
+
+    result.trainDatasetX = createMatrix(trainDatasetSize, 4);
+    result.trainDatasetY = createMatrix(trainDatasetSize, 1);
+    result.testDatasetX = createMatrix(testDatasetSize, 4);
+    result.testDatasetY = createMatrix(testDatasetSize, 1);
+    result.validDatasetX = createMatrix(validDatasetSize, 4);
+    result.validDatasetY = createMatrix(validDatasetSize, 1);
+
+    for (int i = 0; i < trainDatasetSize; i++) {
+        for (int j = 0; j < mat.cols; j++) {
+            if (j == 0) {
+                result.trainDatasetY.data[i] = mat.data[i * mat.cols + j];
+            }else{
+                result.trainDatasetX.data[i * result.trainDatasetX.cols + j - 1] = mat.data[i * mat.cols + j];
+            }
+        }
+    }
+    for (int i = trainDatasetSize; i < trainDatasetSize + testDatasetSize; i++) {
+        for (int j = 0; j < mat.cols; j++) {
+            if (j == 0) {
+                result.testDatasetY.data[(i - trainDatasetSize) * result.testDatasetY.cols + j] = mat.data[i * mat.cols + j];
+            }else {
+                result.testDatasetX.data[(i - trainDatasetSize) * result.testDatasetX.cols + j - 1] = mat.data[i * mat.cols + j];
+            }
+        }
+    }
+
+    for (int i = trainDatasetSize + testDatasetSize; i < mat.rows; i++) {
+        for (int j = 0; j < mat.cols; j++) {
+            if (j == 0) {
+                result.validDatasetY.data[(i - trainDatasetSize - testDatasetSize) * result.testDatasetY.cols + j] = mat.data[i * mat.cols + j];
+            }else {
+                result.validDatasetX.data[(i - trainDatasetSize - testDatasetSize) * result.validDatasetX.cols + j - 1] = mat.data[i * mat.cols + j];
+            }
+        }
+    }
+
+    return result;
+}
+
 int main(void) {
     Matrix mat = createMatrix(3, 3);
     initMatrix(mat);
