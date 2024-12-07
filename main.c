@@ -273,7 +273,6 @@ float MeanValue(Matrix mat) {
 }
 
 float R_squared(Matrix actual, Matrix predicted) {
-    float squared = 0;
     float rss = 0;
     float tss = 0;
     float mean = MeanValue(predicted);
@@ -309,12 +308,40 @@ void derivativeReLU(Matrix mat) {
     }
 }
 
+float forward(GoldModel model) {
+    dotProduct(model.a0, model.w1, model.a1);
+    addMatrix(model.a1, model.b1);
+    ReLU(model.a1);
+
+    dotProduct(model.a1, model.w2, model.a2);
+    addMatrix(model.a2, model.b2);
+    ReLU(model.a2);
+
+    dotProduct(model.a2, model.w3, model.a3);
+    addMatrix(model.a3, model.b3);
+
+    return *model.a3.data;
+}
+
+typedef struct {
+    Matrix TrainPredictions;
+    Matrix ValidPredictions;
+    Matrix TestPredictions;
+} Predictions;
 
 int main(void) {
-    Matrix mat = createMatrix(3, 3);
-    initMatrix(mat);
-    displayMatrix(mat);
-    free(mat.data);
+    Matrix DatasetCSV = createMatrix(515, 5);
+    readData(DatasetCSV);
+    MinMaxNormalize(DatasetCSV);
+    DatasetSplit Dataset = CutDataset(DatasetCSV, 0.8);
+    free(DatasetCSV.data);
+
+    GoldModel model = createGoldModel();
+    Predictions predictions;
+    predictions.TrainPredictions = createMatrix(Dataset.trainDatasetX.rows, 1);
+    predictions.ValidPredictions = createMatrix(Dataset.validDatasetX.rows, 1);
+    predictions.TestPredictions = createMatrix(Dataset.testDatasetX.rows, 1);
+
 
     return 0;
 }
