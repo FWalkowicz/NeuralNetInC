@@ -15,7 +15,7 @@ The goal of this project is to demonstrate the fundamental concepts behind neura
 
 Exploding Gradients: In deeper networks, the gradients might explode, causing instability in training. This can be mitigated using techniques like Batch Normalization or gradient clipping (to be added in future improvements).
 
-Future Improvements
+## Future Improvements
 
 - Implement Batch Normalization to address exploding gradients
 - Add support for more advanced activation functions like Leaky ReLU and ELU
