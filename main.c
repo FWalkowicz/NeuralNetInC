@@ -103,7 +103,7 @@ void readData(Matrix DatasetMatix) {
         fgets(line, sizeof(line), file);
         token = strtok(line, ",");
         for (int j = 0; j < DatasetMatix.cols; j++) {
-            DatasetMatix.data[i * DatasetMatix.cols + j] = atof(token); // przypisanie wartości z CSV do macierzy i zamiana str na float
+            DatasetMatix.data[i * DatasetMatix.cols + j] = atof(token);
             token = strtok(NULL, ",");
             if (token == NULL) {
                 break;
@@ -163,11 +163,11 @@ DatasetSplit CutDataset(Matrix mat, float trainPercent) {
 
     DatasetSplit result;
 
-    result.trainDatasetX = createMatrix(trainDatasetSize, 4);
+    result.trainDatasetX = createMatrix(trainDatasetSize, mat.cols - 1);
     result.trainDatasetY = createMatrix(trainDatasetSize, 1);
-    result.testDatasetX = createMatrix(testDatasetSize, 4);
+    result.testDatasetX = createMatrix(testDatasetSize, mat.cols - 1);
     result.testDatasetY = createMatrix(testDatasetSize, 1);
-    result.validDatasetX = createMatrix(validDatasetSize, 4);
+    result.validDatasetX = createMatrix(validDatasetSize, mat.cols - 1);
     result.validDatasetY = createMatrix(validDatasetSize, 1);
 
     for (int i = 0; i < trainDatasetSize; i++) {
