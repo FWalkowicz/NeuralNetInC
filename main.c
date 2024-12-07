@@ -89,21 +89,21 @@ void multipleMatrixByValue(Matrix result, float value) {
     }
 }
 
-void readData(Matrix DatasetMatix) {
+void readData(Matrix DatasetMatrix) {
     char line[1000];
     char *token;
-    FILE *file = fopen("./Data/gold.csv", "r");
+    FILE *file = fopen("/home/walkowiczf/CLionProjects/untitled1/Data/gold.csv", "r");
     if (file == NULL) {
         perror("Error opening file");
     }
 
     fgets(line, sizeof(line), file); // skip header
 
-    for (int i = 0; i < DatasetMatix.rows; i++) {
+    for (int i = 0; i < DatasetMatrix.rows; i++) {
         fgets(line, sizeof(line), file);
         token = strtok(line, ",");
-        for (int j = 0; j < DatasetMatix.cols; j++) {
-            DatasetMatix.data[i * DatasetMatix.cols + j] = atof(token);
+        for (int j = 0; j < DatasetMatrix.cols; j++) {
+            DatasetMatrix.data[i * DatasetMatrix.cols + j] = atof(token);
             token = strtok(NULL, ",");
             if (token == NULL) {
                 break;
@@ -202,10 +202,50 @@ DatasetSplit CutDataset(Matrix mat, float trainPercent) {
     return result;
 }
 
+typedef struct {
+    // wejście
+    Matrix a0;
+    // 1 warstwa
+    Matrix w1, b1, a1;
+    // 2 warstwa
+    Matrix w2, b2, a2;
+    // wyjście
+    Matrix w3, b3, a3;
+} GoldModel;
+
+GoldModel createGoldModel(void) {
+    GoldModel model;
+    model.a0 = createMatrix(1, 4);
+    initMatrix(model.a0);
+    // 1 warstwa
+    model.w1 = createMatrix(4, 7);
+    initMatrix(model.w1);
+    model.b1 = createMatrix(1, 7);
+    initMatrix(model.b1);
+    model.a1 = createMatrix(1, 7);
+    // 2 warstwa
+    model.w2 = createMatrix(7, 7);
+    initMatrix(model.w2);
+    model.b2 = createMatrix(1, 7);
+    initMatrix(model.w2);
+    model.a2 = createMatrix(1, 7);
+    initMatrix(model.a2);
+    // wyjście 1 neuron
+    model.w3 = createMatrix(7, 1);
+    initMatrix(model.w3);
+    model.b3 = createMatrix(1, 1);
+    initMatrix(model.w3);
+    model.a3 = createMatrix(1, 1);
+    initMatrix(model.a3);
+
+    return model;
+}
+
 int main(void) {
     Matrix mat = createMatrix(3, 3);
     initMatrix(mat);
     displayMatrix(mat);
     free(mat.data);
+
     return 0;
 }
