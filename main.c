@@ -241,6 +241,41 @@ GoldModel createGoldModel(void) {
     return model;
 }
 
+float MSE(Matrix actual, Matrix predicted) {
+    float mse = 0;
+    for (int i = 0; i < actual.rows; i++) {
+        for (int j = 0; j < actual.cols; j++) {
+            float error = actual.data[i * actual.cols + j] - predicted.data[i * predicted.cols + j];
+            mse += error * error;
+        }
+    }
+    return mse / (float) actual.rows;
+}
+
+float MeanValue(Matrix mat) {
+    float value = 0;
+    for (int i = 0; i < mat.rows; i++) {
+        for (int j = 0; j < mat.cols; j++) {
+            value += mat.data[i * mat.cols + j];
+        };
+    }
+    return value / (float)mat.rows;
+}
+
+float R_squared(Matrix actual, Matrix predicted) {
+    float squared = 0;
+    float rss = 0;
+    float tss = 0;
+    float mean = MeanValue(predicted);
+    for (int i = 0; i < actual.rows; i++) {
+        for (int j = 0; j < actual.cols; j++) {
+            rss += pow((actual.data[i * actual.cols + j] - predicted.data[i * actual.cols + j]), 2);
+            tss += pow((actual.data[i * actual.cols + j] - mean),2);
+        }
+    }
+    return 1- (rss / tss);
+}
+
 int main(void) {
     Matrix mat = createMatrix(3, 3);
     initMatrix(mat);
